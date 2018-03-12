@@ -4,7 +4,7 @@ blotkarz_baza = [str(x) for x in range(1,11)]
 kolory = ['kier', 'pik', 'karo', 'trefl']
 
 figurant_talia = [(x,y) for x in figurant_baza for y in kolory]
-blotkarz_talia = [(x,y) for x in figurant_baza for y in kolory]
+blotkarz_talia = [(x,y) for x in blotkarz_baza for y in kolory]
 
 liczba_testow = 10000
 
