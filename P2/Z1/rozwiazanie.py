@@ -15,7 +15,7 @@ def readTest(filename):
     test_content = open(filename).readlines()
     out = []
     for line in test_content:
-        out.append(re.findall(r'\d', line))
+        out.append(re.findall(r'\d+', line))
     return list(map(lambda x : list(map(int, x)), out))
 
 
@@ -134,40 +134,39 @@ def walkSat(board, board_mask, test_data):
     error_counter = 0
     try:
         while not is_correct(board, test_data):
-            broken_rows = getBrokenRows(board, test_data)
+            printTab(board, '\n')
+            if random.choice([0,1]):
 
-            if broken_rows:
-                row_index = random.choice(broken_rows)
-                broken_rows.remove(row_index)
+                broken_rows = getBrokenRows(board, test_data)
+                if broken_rows:
+                    row_index = random.choice(broken_rows)
+                    broken_rows.remove(row_index)
 
-                min_cost = MAX_COST
-                best_index = -1
+                    min_cost = MAX_COST
+                    best_index = -1
 
-                for col_index in range(num_columns):
-                    if board_mask[row_index][col_index] == 0:
-                        column = getColumn(board, col_index)
+                    for col_index in range(num_columns):
+                        if board_mask[row_index][col_index] == 0:
+                            column = getColumn(board, col_index)
 
-                        board[row_index][col_index] = inverse(board[row_index][col_index])
-                        row_cost = opt_dist(board[row_index], rows_description[row_index])
-                        col_cost = opt_dist(column, columns_description[col_index])
-                        board[row_index][col_index] = inverse(board[row_index][col_index])
+                            board[row_index][col_index] = inverse(board[row_index][col_index])
+                            row_cost = opt_dist(board[row_index], rows_description[row_index])
+                            col_cost = opt_dist(column, columns_description[col_index])
+                            board[row_index][col_index] = inverse(board[row_index][col_index])
 
-                        sum_cost = row_cost + col_cost
-                        if min_cost > sum_cost:
-                            min_cost = sum_cost
-                            best_index = col_index
+                            sum_cost = row_cost + col_cost
+                            if min_cost > sum_cost:
+                                min_cost = sum_cost
+                                best_index = col_index
 
-                board[row_index][best_index] = inverse(board[row_index][best_index])
-                if opt_dist(board[row_index], rows_description[row_index]):
-                    broken_rows.append(row_index)
-
-                error_counter = incrementError(error_counter)
+                    board[row_index][best_index] = inverse(board[row_index][best_index])
             else:
                 broken_columns = getBrokenColumns(board, test_data)
-                while True:
+
+                if broken_columns:
 
                     col_index = random.choice(broken_columns)
-                    broken_columns.remove(column_index)
+                    broken_columns.remove(col_index)
 
                     min_cost = MAX_COST
                     best_index = -1
@@ -190,20 +189,19 @@ def walkSat(board, board_mask, test_data):
                     if opt_dist(getColumn(board, col_index), columns_description[col_index]) > 0:
                         broken_columns.append(col_index)
 
-                    error_counter = incrementError(error_counter)
-                    if not broken_columns:
-                        break
+            error_counter = incrementError(error_counter)
 
     except ValueError:
         printTab(board, '\n')
-        return walkSat(board, board_mask, test_data)
+        return walkSat(createBoard(test_data), board_mask, test_data)
+
+    return board
 
 
 ###########
 ## START ##
 ###########
 test_data = readTest('test')
-
 board = createBoard(test_data)
 board_mask = fillSureFields(test_data)
 
