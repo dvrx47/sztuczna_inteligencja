@@ -2,7 +2,8 @@ import re
 import numpy as np
 import itertools
 import functools
-
+import sys
+import os
 
 def readTest(filename):
     test_content = open(filename).readlines()
@@ -48,17 +49,20 @@ def V(x):
 
 
 def printPredLabel(nrow, ncol, rdesc, cdesc):
+    ar,ac = 'ar', 'ac'
+    if nrow == ncol:
+        ar = ac = 'a'
     variables = [V(x) for x in itertools.product(range(nrow), range(ncol))]
     print('solve(['+', '.join(variables)+']):-')
     rows = []
     for i in range(nrow):
         variables = [V(x) for x in itertools.product([i], range(ncol))]
-        rows.append('\tac(['+', '.join(variables)+'], ['+', '.join(map(str,rdesc[i]))+'], '+'{}'.format(ncol)+'),')
+        rows.append('\t'+ar+'(['+', '.join(map(str,rdesc[i]))+'], ['+', '.join(variables)+']),')
 
     cols = []
     for i in range(ncol):
         variables = [V(x) for x in itertools.product(range(nrow), [i])]
-        cols.append('\tac(['+', '.join(variables)+'], ['+', '.join(map(str,cdesc[i]))+'], '+'{}'.format(nrow)+'),')
+        cols.append('\t'+ac+'(['+', '.join(map(str,cdesc[i]))+'], ['+', '.join(variables)+']),')
 
     toprint = functools.reduce(lambda x,y:x+y, map(lambda x,y: [x,y], rows, cols))
     list(map(print, toprint))
@@ -67,29 +71,46 @@ def printPredLabel(nrow, ncol, rdesc, cdesc):
 
 def genDictionary(nrow, ncol, rdesc, cdesc):
     d = {}
+    ar, ac = 'r', 'c'
+    if nrow == ncol:
+        ar = ac = 'e'
     for i in range(nrow):
-        k = (tuple(rdesc[i]), ncol)
+        k = (tuple(rdesc[i]), ncol, ar)
         if k not in d:
             d[k] = genCorrectLines(rdesc[i], ncol)
 
     for i in range(ncol):
-        k = (tuple(cdesc[i]), nrow)
+        k = (tuple(cdesc[i]), nrow, ac)
         if k not in d:
             d[k] = genCorrectLines(cdesc[i], nrow)
 
     return d
 
 
-def printDict(d):
+def printDict(d, r, c):
     for k in d:
         l = d[k]
         for sl in l:
-            print('ac(['+', '.join(map(str,sl))+'], ['+', '.join(map(str,k[0]))+'], {}).'.format(k[1]))
+            a = ''
+            if k[2] == 'r':
+                a = 'ar'
+            elif k[2] == 'c':
+                a = 'ac'
+            elif k[2] == 'e':
+                a = 'a'
+            print(a+'(['+', '.join(map(str,k[0]))+'], ['+', '.join(map(str,sl))+']).')
+
+
+def printFooter():
+    print('\n\n:- solve(X), write(X), halt(0).')
 
 
 ################
 ## START HERE ##
 ################
+
+s = sys.stdout
+sys.stdout = open('.solver.pl', 'w')
 
 test_data = readTest('test')
 
@@ -102,5 +123,11 @@ columns_description = test_data[num_rows+1:]
 printPredLabel(num_rows, num_columns, rows_description, columns_description)
 print()
 
-printDict(genDictionary(num_rows, num_columns, rows_description, columns_description))
+printDict(genDictionary(num_rows, num_columns, rows_description, columns_description), num_rows, num_columns)
 
+printFooter()
+
+sys.stdout.close()
+sys.stdout = s
+
+os.system('prolog .solver.pl > .out && rm -f .solver.py')
