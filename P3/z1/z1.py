@@ -5,8 +5,8 @@ import functools
 import sys
 import os
 
-def readTest(filename):
-    test_content = open(filename).readlines()
+def readTest():
+    test_content = sys.stdin.readlines()
     out = []
     for line in test_content:
         out.append(re.findall(r'\d+', line))
@@ -57,12 +57,12 @@ def printPredLabel(nrow, ncol, rdesc, cdesc):
     rows = []
     for i in range(nrow):
         variables = [V(x) for x in itertools.product([i], range(ncol))]
-        rows.append('\t'+ar+'(['+', '.join(map(str,rdesc[i]))+'], ['+', '.join(variables)+']),')
+        rows.append('\t'+ar+'i'.join(map(str,rdesc[i]))+'(['+', '.join(variables)+']),')
 
     cols = []
     for i in range(ncol):
         variables = [V(x) for x in itertools.product(range(nrow), [i])]
-        cols.append('\t'+ac+'(['+', '.join(map(str,cdesc[i]))+'], ['+', '.join(variables)+']),')
+        cols.append('\t'+ac+'i'.join(map(str,cdesc[i]))+'(['+', '.join(variables)+']),')
 
     toprint = functools.reduce(lambda x,y:x+y, map(lambda x,y: [x,y], rows, cols))
     list(map(print, toprint))
@@ -87,7 +87,7 @@ def genDictionary(nrow, ncol, rdesc, cdesc):
     return d
 
 
-def printDict(d, r, c):
+def printDict(d):
     for k in d:
         l = d[k]
         for sl in l:
@@ -98,11 +98,20 @@ def printDict(d, r, c):
                 a = 'ac'
             elif k[2] == 'e':
                 a = 'a'
-            print(a+'(['+', '.join(map(str,k[0]))+'], ['+', '.join(map(str,sl))+']).')
+            print(a+'i'.join(map(str,k[0]))+'(['+', '.join(map(str,sl))+']).')
 
 
 def printFooter():
     print('\n\n:- solve(X), write(X), halt(0).')
+
+
+def fixListSize(raw_list, num_row):
+    return list(map(list, np.array_split(raw_list,num_row)))
+
+def printTab(tab, end=''):
+    for i in range(len(tab)):
+        print( ''.join(map(lambda x: '#' if x else '.', tab[i])) )
+    print(end=end)
 
 
 ################
@@ -112,7 +121,7 @@ def printFooter():
 s = sys.stdout
 sys.stdout = open('.solver.pl', 'w')
 
-test_data = readTest('test')
+test_data = readTest()
 
 num_rows = test_data[0][0]
 num_columns = test_data[0][1]
@@ -123,11 +132,17 @@ columns_description = test_data[num_rows+1:]
 printPredLabel(num_rows, num_columns, rows_description, columns_description)
 print()
 
-printDict(genDictionary(num_rows, num_columns, rows_description, columns_description), num_rows, num_columns)
+printDict(genDictionary(num_rows, num_columns, rows_description, columns_description))
 
 printFooter()
 
 sys.stdout.close()
 sys.stdout = s
 
-os.system('prolog .solver.pl > .out && rm -f .solver.py')
+os.system('prolog .solver.pl > .out && rm -f .solver.pl')
+
+with open(".out") as f:
+    raw_list = eval(f.readline())
+
+printTab(fixListSize(raw_list, num_rows))
+os.system('rm -f .out')
