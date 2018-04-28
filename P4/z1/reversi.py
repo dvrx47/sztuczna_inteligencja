@@ -2,6 +2,7 @@
 import random
 import sys
 from collections import defaultdict as dd
+import copy
 
 
 M = 8
@@ -121,15 +122,61 @@ class Board:
         ms = self.moves(player)
         if ms:
             return random.choice(ms)
-        return [None]
+        return None
 
-                        #
+
+##############################################
+def get_game_phase(board):
+    if len(board.fields) > 40:
+        return 0
+    if len(board.fields) > 30:
+        return 1
+    return 2
+
+def random_choice(moves, board, player):
+    return random.choice(moves)
+
+
+def get_field_weight(move):
+    x, y = move
+    weights = [ [3,0,2,0,0,2,0,3],
+                [0,0,2,0,0,2,0,0],
+                [2,2,2,0,0,2,2,2],
+                [0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0],
+                [2,2,2,0,0,2,2,2],
+                [0,0,2,0,0,2,0,0],
+                [3,0,2,0,0,2,0,3] ]
+
+    return weights[x][y]
+
+
+def weight_move(moves, board, player):
+    best_move = [None]
+    best_val = -200
+    for m in moves:
+        mval = get_field_weight(m)
+        if mval > best_val:
+            best_val = mval
+            best_move = m
+    return best_move
+
+
+ai_func = [weight_move, weight_move, weight_move]
 def agent_move(board, player):
-    #TODO: implement AI for agent
+    game_phase = get_game_phase(board)
     moves = board.moves(player)
-    if moves:
-        return moves[-1]
-    return [None]
+    if moves and moves != [None]:
+        return ai_func[game_phase](moves, board,player)
+    return None
+
+
+##############################################
+
+def random_agent_move(board, player):
+    m = board.random_move(player)
+    board.do_move(m, player)
+
 
 random_agent = 0
 my_agent = 0
@@ -145,9 +192,7 @@ for g in range(GAMES):
             m = agent_move(B, player)
             B.do_move(m, player)
         else:
-            #random agent
-            m = B.random_move(player)
-            B.do_move(m, player)
+            random_agent_move(B, player)
         player = 1-player
         DEBUG and raw_input()
         if B.terminal():
