@@ -12,7 +12,8 @@ gameMap =     [ '..#*#..',
 		'.......',
 		'...#...',
 		'..#*#..' ]
-N = 200
+N = 2000
+DEBUG = False
 
 class Agent(object):
     def __init__(self, pets, target):
@@ -31,10 +32,54 @@ class Agent(object):
         self.hierarchy['e'] = 7
         self.target = target
 
+    def confirmMove(self, m, board):
+        f = m[0]
+        y1, x1 = m[1]
+        y2, x2 = m[2]
+        r = list(board[y1])
+        r[x1] = gameMap[y1][x1]
+        board[y1] = ''.join(r)
+        r = list(board[y2])
+        r[x2] = f
+        board[y2] = ''.join(r)
+        return board, m[3]
 
     def makeMove(self, board):
         pass
 
+class AgentEx3(Agent):
+    def makeRatMove(self,y,x, board):
+        yt, xt = self.target
+        if y < yt:
+            if board[y+1][x] in gameMap:
+                return (board[y][x], (y,x), (y+1,x), 0)
+            else:
+                return (board[y][x], (y,x), (y+1,x), 1)
+        elif y > yt:
+            if board[y-1][x] in gameMap:
+                return (board[y][x], (y,x), (y-1,x), 0)
+            else:
+                return (board[y][x], (y,x), (y-1,x), 1)
+
+
+        if x < xt:
+            if board[y][x+1] in gameMap:
+                return (board[y][x], (y,x), (y,x+1), 0)
+            else:
+                return (board[y][x], (y,x), (y,x+1), 1)
+        elif x > xt:
+            if board[y][x-1] in gameMap:
+                return (board[y][x], (y,x), (y,x-1), 0)
+            else:
+                return (board[y][x], (y,x), (y,x-1), 1)
+
+    def makeMove(self, board):
+        for y in range(9):
+            for x in range(7):
+                if board[y][x] in self.pets:
+                    if board[y][x].lower() == 'r':
+                        m = self.makeRatMove(y,x, board)
+                        return self.confirmMove(m, board)
 
 class AgentEx2(Agent):
     def canCapture(self, a, b):
@@ -518,18 +563,6 @@ class AgentEx2(Agent):
                     moves += current_moves
         return moves
 
-    def confirmMove(self, m, board):
-        f = m[0]
-        y1, x1 = m[1]
-        y2, x2 = m[2]
-        r = list(board[y1])
-        r[x1] = gameMap[y1][x1]
-        board[y1] = ''.join(r)
-        r = list(board[y2])
-        r[x2] = f
-        board[y2] = ''.join(r)
-        return board, m[3]
-
     def swapData(self):
         self.pets, self.oponent_pets = self.oponent_pets, self.pets
         if self.target[0] == 0:
@@ -630,7 +663,7 @@ class Game(object):
             return False
 
         def winnerExtraRules(self):
-            return 1
+            return 0
 
         def getWinner(self):
             if self.board[0][3] != '*':
@@ -672,6 +705,7 @@ class Game(object):
                     self.movesWithoutCapture += 1
             self.fillWinTable()
 
-
-game = Game(AgentEx2, AgentEx2, 0, True)
-game.runGame()
+for i in range(numberOfGames):
+    game = Game(AgentEx2, AgentEx3, i, DEBUG)
+    game.runGame()
+print(sum(winTable))
